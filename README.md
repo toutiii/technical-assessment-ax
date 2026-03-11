@@ -60,15 +60,16 @@ With coverage:
 uv run pytest --cov=app --cov-report=term-missing --cov-fail-under=80
 ```
 
-## Pre-commit (Ruff + ty on commit)
+## Pre-commit (Ruff)
 
-This project includes a `.pre-commit-config.yaml` that runs Ruff (with auto-fix), `ty` (static type checker), and a few basic checks before each commit.
+This project includes a `.pre-commit-config.yaml` that runs Ruff (with auto-fix) and a few basic checks before each commit.
 
 ```bash
 uv run pre-commit install
 uv run pre-commit run --all-files
 ```
 
+## Type checking
 You can also run type checking manually:
 
 ```bash
