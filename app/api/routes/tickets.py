@@ -1,3 +1,4 @@
+import logging
 from http import HTTPStatus
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -5,10 +6,23 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 from app.db.models import Ticket
+from app.exceptions import ServiceError
 from app.schemas.ticket import TicketCreate, TicketResponse, TicketUpdate
 from app.services import ticket as ticket_service
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/tickets", tags=["tickets"])
+
+CLIENT_ERROR_MESSAGE = "Something went wrong. Please try again later."
+
+
+def _handle_service_error(e: ServiceError) -> HTTPException:
+    """Map ServiceError to HTTPException (500). Log details server-side, return generic message."""
+    logger.exception("Service error: %s", e.message)
+    return HTTPException(
+        status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+        detail=CLIENT_ERROR_MESSAGE,
+    )
 
 
 @router.post("/", response_model=TicketResponse, status_code=HTTPStatus.CREATED)
@@ -17,15 +31,19 @@ def create_ticket(
     db: Session = Depends(get_db),
 ) -> Ticket:
     """Create a new ticket."""
-    created_ticket = ticket_service.create_ticket(db, ticket_data)
-    return created_ticket
+    try:
+        return ticket_service.create_ticket(db, ticket_data)
+    except ServiceError as e:
+        raise _handle_service_error(e)
 
 
 @router.get("/", response_model=list[TicketResponse])
 def list_tickets(db: Session = Depends(get_db)) -> list[Ticket]:
     """Return all tickets."""
-    tickets = ticket_service.get_tickets(db)
-    return tickets
+    try:
+        return ticket_service.get_tickets(db)
+    except ServiceError as e:
+        raise _handle_service_error(e)
 
 
 @router.get("/{ticket_id}", response_model=TicketResponse)
@@ -34,9 +52,15 @@ def get_ticket(
     db: Session = Depends(get_db),
 ) -> Ticket:
     """Return a ticket by id."""
-    ticket = ticket_service.get_ticket(db, ticket_id)
+    try:
+        ticket = ticket_service.get_ticket(db, ticket_id)
+    except ServiceError as e:
+        raise _handle_service_error(e)
     if ticket is None:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Ticket not found")
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail="Ticket not found",
+        )
     return ticket
 
 
@@ -47,11 +71,19 @@ def update_ticket(
     db: Session = Depends(get_db),
 ) -> Ticket:
     """Update a ticket by id."""
-    ticket = ticket_service.get_ticket(db, ticket_id)
+    try:
+        ticket = ticket_service.get_ticket(db, ticket_id)
+    except ServiceError as e:
+        raise _handle_service_error(e)
     if ticket is None:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Ticket not found")
-    ticket = ticket_service.update_ticket(db, ticket, ticket_data)
-    return ticket
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail="Ticket not found",
+        )
+    try:
+        return ticket_service.update_ticket(db, ticket, ticket_data)
+    except ServiceError as e:
+        raise _handle_service_error(e)
 
 
 @router.patch("/{ticket_id}/close", response_model=TicketResponse)
@@ -60,8 +92,16 @@ def close_ticket(
     db: Session = Depends(get_db),
 ) -> Ticket:
     """Close a ticket by id."""
-    ticket = ticket_service.get_ticket(db, ticket_id)
+    try:
+        ticket = ticket_service.get_ticket(db, ticket_id)
+    except ServiceError as e:
+        raise _handle_service_error(e)
     if ticket is None:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Ticket not found")
-    ticket = ticket_service.close_ticket(db, ticket)
-    return ticket
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail="Ticket not found",
+        )
+    try:
+        return ticket_service.close_ticket(db, ticket)
+    except ServiceError as e:
+        raise _handle_service_error(e)
