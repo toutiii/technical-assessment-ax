@@ -19,13 +19,6 @@ dev = [
     "ty<=0.0.21",
 ]
 
-[tool.ty.environment]
-python-version = "3.10"
-root = ["."]
-
-[tool.ty.rules]
-unresolved-import = "warn"
-
 [tool.ruff]
 line-length = 119
 target-version = "py310"
