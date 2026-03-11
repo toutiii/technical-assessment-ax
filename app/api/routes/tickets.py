@@ -13,11 +13,11 @@ router = APIRouter(prefix="/tickets", tags=["tickets"])
 
 @router.post("/", response_model=TicketResponse, status_code=HTTPStatus.CREATED)
 def create_ticket(
-    ticket_in: TicketCreate,
+    ticket_data: TicketCreate,
     db: Session = Depends(get_db),
 ) -> Ticket:
     """Create a new ticket."""
-    created_ticket = ticket_service.create_ticket(db, ticket_in)
+    created_ticket = ticket_service.create_ticket(db, ticket_data)
     return created_ticket
 
 
