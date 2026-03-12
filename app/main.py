@@ -17,7 +17,15 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    title="Ticket API",
+    description=(
+        "Mini REST API for ticket management.\n\n"
+        "This API demonstrates FastAPI + SQLAlchemy + Pydantic with an in-memory SQLite database."
+    ),
+    version="0.1.0",
+    lifespan=lifespan,
+)
 app.include_router(tickets.router)
 
 
